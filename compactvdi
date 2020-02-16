@@ -6,7 +6,7 @@ Zero free blocks from VDI filesystem and compact it
 
 import sys
 import os
-import argparse
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import subprocess
 import shlex
 
@@ -16,15 +16,18 @@ def main():
     Run
     '''
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__,
+                            formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('vdi')
+    parser.add_argument('-d', '--device', default='/dev/nbd0',
+                        help="network block device")
     args = parser.parse_args()
 
     vdipath = os.path.expanduser(args.vdi)
     try:
-        subprocess.check_call(['sudo', 'qemu-nbd', '-c', '/dev/nbd0', vdipath])
-        subprocess.check_call(['sudo', 'zerofree', '-v', '/dev/nbd0p1'])
-        subprocess.check_call(['sudo', 'qemu-nbd', '-d', '/dev/nbd0'])
+        subprocess.check_call(['sudo', 'qemu-nbd', '-c', args.device, vdipath])
+        subprocess.check_call(['sudo', 'zerofree', '-v', '%sp1' % args.device])
+        subprocess.check_call(['sudo', 'qemu-nbd', '-d', args.device])
         subprocess.check_call(['VBoxManage',
                                'modifymedium',
                                vdipath,
