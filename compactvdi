@@ -1,0 +1,38 @@
+#! /usr/bin/env python3
+
+'''
+Zero free blocks from VDI filesystem and compact it
+'''
+
+import sys
+import os
+import argparse
+import subprocess
+import shlex
+
+
+def main():
+    '''
+    Run
+    '''
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('vdi')
+    args = parser.parse_args()
+
+    vdipath = os.path.expanduser(args.vdi)
+    try:
+        subprocess.check_call(['sudo', 'qemu-nbd', '-c', '/dev/nbd0', vdipath])
+        subprocess.check_call(['sudo', 'zerofree', '-v', '/dev/nbd0p1'])
+        subprocess.check_call(['sudo', 'qemu-nbd', '-d', '/dev/nbd0'])
+        subprocess.check_call(['VBoxManage',
+                               'modifymedium',
+                               vdipath,
+                               '--compact'])
+    except subprocess.CalledProcessError as exc:
+        cmd = ' '.join([shlex.quote(arg) for arg in exc.cmd])
+        print("Couldn't run %s" % cmd)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
